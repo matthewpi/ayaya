@@ -1,4 +1,4 @@
-package ytdl // import "github.com/matthewpi/ayaya/ytdl"
+package ytdl
 
 import (
 	"net/http"

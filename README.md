@@ -1,21 +1,13 @@
-# Ayaya
+# ayaya
 A demo music bot utilizing the [arikawa](https://github.com/diamondburned/arikawa) library.
 
-## Usage
-Currently, you need to have my pending voice support pull request cloned to `../arikawa` depending
-on where you clone this repo.
-
+## Using
 ```shell script
-# Clone the repositories
-git clone https://github.com/matthewpi/arikawa.git
+# Clone the repository
 git clone https://github.com/matthewpi/ayaya.git
 
-# Checkout the "feature/voice" branch
-cd arikawa
-git checkout feature/voice
-
 # Run the bot
-cd ../ayaya
+cd ayaya
 make && BOT_TOKEN="<BOT TOKEN>" ./ayaya
 ```
 

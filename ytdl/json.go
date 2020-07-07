@@ -8,6 +8,7 @@ type playerConfig struct {
 	Assets struct {
 		JS string `json:"js"`
 	} `json:"assets"`
+
 	Args struct {
 		Status                 string `json:"status"`
 		Errorcode              string `json:"errorcode"`
@@ -36,6 +37,7 @@ type formatInfo struct {
 	AudioSampleRate  string  `json:"audioSampleRate"`
 	AudioChannels    int     `json:"audioChannels"`
 	Cipher           *string `json:"cipher"`
+	SignatureCipher  *string `json:"signatureCipher"`
 	URL              string  `json:"url"`
 	Index            *Range  `json:"indexRange,omitempty"`
 	Init             *Range  `json:"initRange,omitempty"`
@@ -96,11 +98,13 @@ type initialData struct {
 											Height int    `json:"height"`
 										} `json:"thumbnails"`
 									} `json:"thumbnail"`
+
 									Title               Content `json:"title"`
 									SubscriberCountText Content `json:"subscriberCountText"`
 									TrackingParams      string  `json:"trackingParams"`
 								} `json:"videoOwnerRenderer"`
 							} `json:"owner"`
+
 							Description          Content `json:"description"`
 							MetadataRowContainer struct {
 								MetadataRowContainerRenderer struct {
@@ -117,7 +121,8 @@ type initialData struct {
 
 type Content struct {
 	SimpleText *string `json:"simpleText,omitempty"`
-	Lines      []struct {
+
+	Lines []struct {
 		Text string `json:"text,omitempty"`
 	} `json:"runs"`
 }
@@ -131,6 +136,7 @@ func (c *Content) String() string {
 	for i := range c.Lines {
 		sb.WriteString(c.Lines[i].Text)
 	}
+
 	return sb.String()
 }
 

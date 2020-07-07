@@ -28,12 +28,14 @@ func (formats FormatList) Extremes(key FormatKey, best bool) FormatList {
 	if len(dst) > 1 {
 		dst.Sort(key, best)
 		first := dst[0]
+
 		var i int
 		for i = 0; i < len(dst)-1; i++ {
 			if first.CompareKey(dst[i+1], key) != 0 {
 				break
 			}
 		}
+
 		i++
 		dst = dst[0:i]
 	}
@@ -53,6 +55,7 @@ func (formats FormatList) Sort(key FormatKey, reverse bool) {
 	if reverse {
 		wrapper = sort.Reverse(wrapper)
 	}
+
 	sort.Stable(wrapper)
 }
 
@@ -66,10 +69,12 @@ func (formats FormatList) Subtract(other FormatList) FormatList {
 				break
 			}
 		}
+
 		if include {
 			dst = append(dst, f)
 		}
 	}
+
 	return dst
 }
 
@@ -88,18 +93,26 @@ func (formats *FormatList) addByInfo(info formatInfo, adaptive bool) error {
 		return fmt.Errorf("no itag found with number: %v", info.Itag)
 	}
 
-	if info.Cipher != nil {
+	switch {
+	case info.Cipher != nil:
 		format, err = parseFormat(*info.Cipher, adaptive)
 		if err != nil {
 			return fmt.Errorf("unable to parse cipher '%v': %w", info.Cipher, err)
 		}
 		format.Itag = *itag
-	} else {
+	case info.SignatureCipher != nil:
+		format, err = parseFormat(*info.SignatureCipher, adaptive)
+		if err != nil {
+			return fmt.Errorf("unable to parse cipher '%v': %w", info.SignatureCipher, err)
+		}
+		format.Itag = *itag
+	default:
 		format = &Format{
 			Itag: *itag,
 			url:  info.URL,
 		}
 	}
+
 	format.Adaptive = adaptive
 	if adaptive && info.Index != nil {
 		format.AdaptiveStream = &AdaptiveStream{
@@ -113,15 +126,18 @@ func (formats *FormatList) addByInfo(info formatInfo, adaptive bool) error {
 			AudioChannels:     info.AudioChannels,
 			FrameRate:         strconv.Itoa(info.FPS),
 		}
+
 		if info.MimeType != "" {
 			var params map[string]string
 			format.AdaptiveStream.MimeType, params, err = mime.ParseMediaType(info.MimeType)
 			if err != nil {
 				return fmt.Errorf("failed to parse mime type: %s", info.MimeType)
 			}
+
 			format.AdaptiveStream.Codecs = params["codecs"]
 		}
 	}
+
 	*formats = append(*formats, format)
 	return nil
 }
@@ -131,6 +147,7 @@ func (formats *FormatList) addByQueryString(input string, adaptive bool) error {
 	if err != nil {
 		return err
 	}
+
 	format.Adaptive = adaptive
 	*formats = append(*formats, format)
 	return nil

@@ -20,6 +20,7 @@ func (c *Client) getDownloadURL(cx context.Context, format *Format, htmlPlayerFi
 	} else {
 		sig = format.sig
 	}
+
 	var urlString string
 	if format.url != "" {
 		urlString = format.url
@@ -34,14 +35,17 @@ func (c *Client) getDownloadURL(cx context.Context, format *Format, htmlPlayerFi
 	} else {
 		return nil, fmt.Errorf("couldn't extract url from format")
 	}
+
 	urlString, err := url.QueryUnescape(urlString)
 	if err != nil {
 		return nil, err
 	}
+
 	u, err := url.Parse(urlString)
 	if err != nil {
 		return nil, err
 	}
+
 	query := u.Query()
 	query.Set("ratebypass", "yes")
 	if len(sig) > 0 {
@@ -54,6 +58,7 @@ func (c *Client) getDownloadURL(cx context.Context, format *Format, htmlPlayerFi
 
 		query.Set(sigParam, sig)
 	}
+
 	u.RawQuery = query.Encode()
 	return u, nil
 }
@@ -61,25 +66,31 @@ func (c *Client) getDownloadURL(cx context.Context, format *Format, htmlPlayerFi
 func decipherTokens(tokens []string, sig string) string {
 	var pos int
 	sigSplit := strings.Split(sig, "")
+
 	for i, l := 0, len(tokens); i < l; i++ {
 		tok := tokens[i]
 		if len(tok) > 1 {
-			pos, _ = strconv.Atoi(string(tok[1:]))
+			pos, _ = strconv.Atoi(tok[1:])
 			pos = ^^pos
 		}
+
 		switch string(tok[0]) {
 		case "r":
 			reverseStringSlice(sigSplit)
+
 		case "w":
 			s := sigSplit[0]
 			sigSplit[0] = sigSplit[pos]
 			sigSplit[pos] = s
+
 		case "s":
 			sigSplit = sigSplit[pos:]
+
 		case "p":
 			sigSplit = sigSplit[pos:]
 		}
 	}
+
 	return strings.Join(sigSplit, "")
 }
 
@@ -129,6 +140,7 @@ func (c *Client) getSigTokens(cx context.Context, htmlPlayerFile string) ([]stri
 	if err != nil {
 		return nil, fmt.Errorf("Error fetching signature tokens: %w", err)
 	}
+
 	bodyString := string(body)
 
 	objResult := actionsObjRegexp.FindStringSubmatch(bodyString)
@@ -137,6 +149,7 @@ func (c *Client) getSigTokens(cx context.Context, htmlPlayerFile string) ([]stri
 	if len(objResult) < 3 || len(funcResult) < 2 {
 		return nil, fmt.Errorf("Error parsing signature tokens")
 	}
+
 	obj := strings.Replace(objResult[1], "$", "\\$", -1)
 	objBody := strings.Replace(objResult[2], "$", "\\$", -1)
 	funcBody := strings.Replace(funcResult[1], "$", "\\$", -1)
@@ -147,12 +160,15 @@ func (c *Client) getSigTokens(cx context.Context, htmlPlayerFile string) ([]stri
 	if result = reverseRegexp.FindStringSubmatch(objBody); len(result) > 1 {
 		reverseKey = strings.Replace(result[1], "$", "\\$", -1)
 	}
+
 	if result = sliceRegexp.FindStringSubmatch(objBody); len(result) > 1 {
 		sliceKey = strings.Replace(result[1], "$", "\\$", -1)
 	}
+
 	if result = spliceRegexp.FindStringSubmatch(objBody); len(result) > 1 {
 		spliceKey = strings.Replace(result[1], "$", "\\$", -1)
 	}
+
 	if result = swapRegexp.FindStringSubmatch(objBody); len(result) > 1 {
 		swapKey = strings.Replace(result[1], "$", "\\$", -1)
 	}
@@ -162,19 +178,26 @@ func (c *Client) getSigTokens(cx context.Context, htmlPlayerFile string) ([]stri
 	if err != nil {
 		return nil, err
 	}
+
 	results := regex.FindAllStringSubmatch(funcBody, -1)
 	var tokens []string
+
 	for _, s := range results {
 		switch s[1] {
 		case swapKey:
 			tokens = append(tokens, "w"+s[2])
+
 		case reverseKey:
 			tokens = append(tokens, "r")
+
 		case sliceKey:
 			tokens = append(tokens, "s"+s[2])
+
 		case spliceKey:
 			tokens = append(tokens, "p"+s[2])
+
 		}
 	}
+
 	return tokens, nil
 }

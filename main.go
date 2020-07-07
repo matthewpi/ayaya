@@ -12,7 +12,9 @@ import (
 
 	"github.com/diamondburned/arikawa/gateway"
 	"github.com/diamondburned/arikawa/state"
+	"github.com/diamondburned/arikawa/utils/wsutil"
 	"github.com/diamondburned/arikawa/voice"
+	"github.com/diamondburned/arikawa/voice/voicegateway"
 
 	"github.com/matthewpi/ayaya/dca"
 	"github.com/matthewpi/ayaya/ytdl"
@@ -37,7 +39,7 @@ func main() {
 		panic(err)
 	}
 
-	gateway.WSDebug = func(v ...interface{}) {
+	wsutil.WSDebug = func(v ...interface{}) {
 		log.Println(v...)
 	}
 
@@ -159,7 +161,7 @@ func (b *Bot) onMessageCreate(e *gateway.MessageCreateEvent) {
 		return
 	}
 
-	if err := conn.Speaking(voice.Microphone); err != nil {
+	if err := conn.Speaking(voicegateway.Microphone); err != nil {
 		fmt.Printf("ERROR | failed to start speaking: %v\n", err)
 		return
 	}
@@ -200,7 +202,7 @@ func (b *Bot) onMessageCreate(e *gateway.MessageCreateEvent) {
 		return
 	}
 
-	if err := conn.Disconnect(b.session.Gateway); err != nil {
+	if err := conn.Disconnect(); err != nil {
 		fmt.Printf("ERROR | an error occurred while trying to disconnect: %v\n", err)
 		return
 	}

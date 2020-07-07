@@ -22,6 +22,7 @@ func (c *Client) httpGet(cx context.Context, url string) (*http.Response, error)
 	if err != nil {
 		return nil, err
 	}
+
 	req = req.WithContext(cx)
 	// Youtube responses depend on language and user agent
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
@@ -31,8 +32,6 @@ func (c *Client) httpGet(cx context.Context, url string) (*http.Response, error)
 }
 
 func (c *Client) httpGetAndCheckResponse(cx context.Context, url string) (*http.Response, error) {
-	c.Logger.Debug().Msgf("Fetching %v", url)
-
 	resp, err := c.httpGet(cx, url)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)

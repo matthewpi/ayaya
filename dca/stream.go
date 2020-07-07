@@ -22,7 +22,7 @@ type StreamingSession struct {
 	done chan error
 
 	source OpusReader
-	vc     *voice.Connection
+	vc     *voice.Session
 
 	paused     bool
 	framesSent int
@@ -36,7 +36,7 @@ type StreamingSession struct {
 // source   : The source of the opus frames to be sent, either from an encoder or decoder.
 // vc       : The voice connection to stream to.
 // done     : If not nil, an error will be sent on it when completed.
-func NewStream(source OpusReader, vc *voice.Connection, done chan error) *StreamingSession {
+func NewStream(source OpusReader, vc *voice.Session, done chan error) *StreamingSession {
 	s := &StreamingSession{
 		source: source,
 		vc:     vc,
@@ -107,7 +107,8 @@ func (s *StreamingSession) readNext() error {
 	select {
 	case <-timeOut:
 		return ErrVoiceConnClosed
-	case s.vc.OpusSend <- opus:
+	default:
+		s.vc.Write(opus)
 	}
 
 	s.Lock()

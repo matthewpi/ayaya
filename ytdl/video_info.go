@@ -53,16 +53,21 @@ func (c *Client) GetVideoInfo(cx context.Context, value interface{}) (*VideoInfo
 		if len(videoID) == 0 {
 			return nil, fmt.Errorf("invalid youtube URL, no video id")
 		}
+
 		return c.GetVideoInfoFromID(cx, videoID)
+
 	case string:
 		if strings.HasPrefix(t, "https://") {
 			uri, err := url.ParseRequestURI(t)
 			if err != nil {
 				return nil, err
 			}
+
 			return c.GetVideoInfo(cx, uri)
 		}
+
 		return c.GetVideoInfoFromID(cx, t)
+
 	default:
 		return nil, fmt.Errorf("identifier type must be a string, *url.URL, or []byte")
 	}
@@ -78,11 +83,13 @@ func extractVideoID(u *url.URL) string {
 		if strings.HasPrefix(u.Path, "/embed/") {
 			return u.Path[7:]
 		}
+
 	case "youtu.be":
 		if len(u.Path) > 1 {
 			return u.Path[1:]
 		}
 	}
+
 	return ""
 }
 
@@ -127,9 +134,8 @@ func (c *Client) Download(cx context.Context, info *VideoInfo, format *Format, d
 }
 
 var (
-	regexpPlayerConfig          = regexp.MustCompile(`ytplayer.config = (.*?)\};`)
-	regexpInitialData           = regexp.MustCompile(`\["ytInitialData"\] = (.+);`)
-	regexpInitialPlayerResponse = regexp.MustCompile(`\["ytInitialPlayerResponse"\] = (.+);`)
+	regexpPlayerConfig = regexp.MustCompile(`ytplayer.config = (.*?)\};`)
+	regexpInitialData  = regexp.MustCompile(`\["ytInitialData"\] = (.+);`)
 )
 
 func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte) (*VideoInfo, error) {
@@ -168,14 +174,12 @@ func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte
 		if err != nil {
 			return nil, err
 		}
-		// glog.Errorf("jsonCOnfig %s\n\n", jsonConfig.Args.PlayerResponse)
 	} else {
-		// log.Debug().Msg("Unable to extract json from default url, trying embedded url")
-
 		info, err := c.getVideoInfoFromEmbedded(cx, id)
 		if err != nil {
 			return nil, err
 		}
+
 		query := url.Values{
 			"video_id": []string{id},
 			"eurl":     []string{youtubeVideoEURL + id},
@@ -184,6 +188,7 @@ func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte
 		if sts, ok := info["sts"].(float64); ok {
 			query.Add("sts", strconv.Itoa(int(sts)))
 		}
+
 		body, err := c.httpGetAndCheckResponseReadBody(cx, youtubeVideoInfoURL+"?"+query.Encode())
 		if err != nil {
 			return nil, fmt.Errorf("Unable to read video info: %w", err)
@@ -226,12 +231,14 @@ func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte
 	if inf.AdaptiveFmts != "" {
 		c.addFormatsByQueryStrings(&formats, strings.NewReader(inf.AdaptiveFmts), true)
 	}
+
 	if inf.PlayerResponse != "" {
 		response := &playerResponse{}
 
 		if err := json.Unmarshal([]byte(inf.PlayerResponse), &response); err != nil {
 			return nil, fmt.Errorf("Couldn't parse player response: %w", err)
 		}
+
 		info.DASHManifestURL = response.StreamingData.DashManifestUrl
 		info.HLSManifestURL = response.StreamingData.HlsManifestUrl
 		if response.PlayabilityStatus.Status != "OK" {
@@ -249,37 +256,34 @@ func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte
 
 		if date, err := time.Parse(youtubeDateFormat, response.Microformat.Renderer.PublishDate); err == nil {
 			info.DatePublished = date
-		} // else {
-		//log.Debug().Msgf("Unable to parse date published %v", err)
-		//}
+		}
 
 		info.Title = response.VideoDetails.Title
 		info.Uploader = response.VideoDetails.Author
-	} // else {
-	//log.Debug().Msg("Unable to extract player response JSON")
-	//}
+	}
 
 	info.htmlPlayerFile = jsonConfig.Assets.JS
 
-	//if len(formats) == 0 {
-	//log.Debug().Msgf("No formats found")
-	//}
 	if dashManifest := inf.Dashmpd; dashManifest != "" {
 		tokens, err := c.getSigTokens(cx, info.htmlPlayerFile)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to extract signature tokens: %w", err)
 		}
+
 		regex := regexp.MustCompile("\\/s\\/([a-fA-F0-9\\.]+)")
 		regexSub := regexp.MustCompile("([a-fA-F0-9\\.]+)")
 		info.DASHManifestURL = regex.ReplaceAllStringFunc(dashManifest, func(str string) string {
 			return "/signature/" + decipherTokens(tokens, regexSub.FindString(str))
 		})
+
 		dashFormats, err := c.getDashManifest(cx, info.DASHManifestURL)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to extract dash manifest: %w", err)
 		}
+
 		for _, dashFormat := range dashFormats {
 			added := false
+
 			for j, format := range formats {
 				if dashFormat.Itag == format.Itag {
 					formats[j] = dashFormat
@@ -287,33 +291,33 @@ func (c *Client) getVideoInfoFromHTML(cx context.Context, id string, html []byte
 					break
 				}
 			}
+
 			if !added {
 				formats = append(formats, dashFormat)
 			}
 		}
 	}
+
 	info.Formats = formats
 	return info, nil
 }
 
 func (c *Client) addFormatsByInfos(formats *FormatList, infos []formatInfo, adaptive bool) {
 	for _, info := range infos {
-		if err := formats.addByInfo(info, adaptive); err != nil {
-			// log.Debug().Err(err)
-		}
+		formats.addByInfo(info, adaptive)
 	}
 }
 
 func (c *Client) addFormatsByQueryStrings(formats *FormatList, rd io.Reader, adaptive bool) {
 	r := bufio.NewReader(rd)
+
 	for {
 		line, err := r.ReadString(',')
 		if err == io.EOF {
 			break
 		}
-		if err := formats.addByQueryString(line[:len(line)-1], adaptive); err != nil {
-			// log.Debug().Err(err)
-		}
+
+		formats.addByQueryString(line[:len(line)-1], adaptive)
 	}
 }
 
@@ -326,13 +330,13 @@ func (c *Client) getVideoInfoFromEmbedded(cx context.Context, id string) (map[st
 		return nil, fmt.Errorf("Embedded url request returned %w", err)
 	}
 
-	//	re = regexp.MustCompile("\"sts\"\\s*:\\s*(\\d+)")
 	re := regexp.MustCompile("yt.setConfig\\({'PLAYER_CONFIG': (.*?)}\\);")
 
 	matches := re.FindSubmatch(html)
 	if len(matches) < 2 {
 		return nil, fmt.Errorf("Error extracting sts from embedded url response")
 	}
+
 	dec := json.NewDecoder(bytes.NewBuffer(matches[1]))
 	err = dec.Decode(&jsonConfig)
 	if err != nil {
@@ -343,7 +347,6 @@ func (c *Client) getVideoInfoFromEmbedded(cx context.Context, id string) (map[st
 }
 
 func (c *Client) getDashManifest(cx context.Context, urlString string) (formats []*Format, err error) {
-
 	resp, err := c.httpGetAndCheckResponse(cx, urlString)
 	if err != nil {
 		return nil, err
@@ -359,23 +362,26 @@ func (c *Client) getDashManifest(cx context.Context, urlString string) (formats 
 			if err != nil {
 				break
 			}
+
 			if itag := getItag(rep.Itag); itag != nil {
 				format := &Format{
 					Itag:     *itag,
 					url:      rep.URL,
 					FromDASH: true,
 				}
+
 				if rep.Height != 0 {
 					format.Itag.Resolution = strconv.Itoa(rep.Height) + "p"
 				}
+
 				formats = append(formats, format)
-			} // else {
-			//log.Debug().Msgf("No metadata found for itag: %v, skipping...", rep.Itag)
-			//}
+			}
 		}
 	}
+
 	if err != io.EOF {
 		return nil, err
 	}
+
 	return formats, nil
 }
