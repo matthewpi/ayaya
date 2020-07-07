@@ -1,6 +1,7 @@
 # ayaya
 A demo music bot utilizing the [arikawa](https://github.com/diamondburned/arikawa) library.
 
+<<<<<<< HEAD
 ## Using
 ```shell script
 # Clone the repository
@@ -19,7 +20,6 @@ links**
 
 ## Notes
 * The included `dca` folder is a fork of [dca](https://github.com/jonas747/dca) by [jonas747](https://github.com/jonas747)
-and is included because it supports the [arikawa](https://github.com/diamondburned/arikawa) voice
-pull request.
+and is included because it supports the [arikawa](https://github.com/diamondburned/arikawa) voice connection.
 * The included `ytdl` folder is a fork of [ytdl](https://github.com/rylio/ytdl) which has [PR #92](https://github.com/rylio/ytdl/pull/92)
 applied to it because it wasn't merged into the official library.
