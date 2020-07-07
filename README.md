@@ -1,7 +1,6 @@
 # ayaya
 A demo music bot utilizing the [arikawa](https://github.com/diamondburned/arikawa) library.
 
-<<<<<<< HEAD
 ## Using
 ```shell script
 # Clone the repository
